@@ -1,107 +1,120 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<!-- data-bs-theme="dark" -->
 
 <head>
-
     <?php
     $request = $_SERVER['REQUEST_URI'];
-    $request = str_replace('/patriarch/frontend/', '', $request);
-    include "header/header.php";
     $mainurl = "/patriarch/frontend";
-    // $mainurl = "";  server
+    $request = str_replace($mainurl . '/', '', $request);
+
+    // معالجة الدخول المباشر وعرض الصفحة المناسبة داخل #app
+    $page = explode('/', $request)[0];
+    $page = $page === '' ? 'home' : $page;
+    $pageFile = __DIR__ . "/pages/$page/$page.php";
+
+    ob_start();
+    if (file_exists($pageFile)) {
+        include $pageFile;
+    } else {
+        http_response_code(404);
+        include __DIR__ . '/pages/error/404.php';
+    }
+    $pageContent = ob_get_clean();
+
+    include "header/header.php";
     ?>
 </head>
 
 <body>
-    <?php
-    include "components/navbar/navbar.php";
-    ?>
-    <div id="app"></div>
+    <?php include "components/navbar/navbar.php"; ?>
+
+    <div id="app">
+        <?php echo $pageContent; ?>
+    </div>
 
     <script>
-        // Function to load pages dynamically
+        // دالة التنقل الديناميكي عبر JavaScript داخل الموقع
         function navigate(event, page) {
             event.preventDefault();
 
-            // Change URL in the browser without refreshing
             const url = `<?php echo $mainurl ?>/${page}`;
             history.pushState({}, "", url);
             updateTitle(page);
-            updateNavbarActive(page); // Update navbar active page
+            updateNavbarActive(page);
 
-
-            // Load page content dynamically
             fetch(`pages/${page}/${page}.php`)
-                .then(res => res.text())
+                .then(res => {
+                    if (!res.ok) throw new Error('Page not found');
+                    return res.text();
+                })
                 .then(html => {
                     document.getElementById("app").innerHTML = html;
                 })
                 .catch(() => {
-                    document.getElementById("app").innerHTML = "<h2>Page Not Found</h2>";
+                    fetch(`pages/error/404.php`)
+                        .then(res => res.text())
+                        .then(html => {
+                            document.getElementById("app").innerHTML = html;
+                        });
                 });
         }
 
-
-
-        // Handle browser back/forward buttons
+        // التعامل مع أزرار الرجوع والتقدم في المتصفح
         window.onpopstate = () => {
             const path = window.location.pathname.replace('<?php echo $mainurl ?>/', '');
-            const page = path.split('/')[0] || '/';
+            const page = path.split('/')[0] || 'home';
 
-            // Load the page based on the URL
             fetch(`pages/${page}/${page}.php`)
-                .then(res => res.text())
+                .then(res => {
+                    if (!res.ok) throw new Error('Page not found');
+                    return res.text();
+                })
                 .then(html => {
                     document.getElementById("app").innerHTML = html;
+                    updateNavbarActive(page);
+                    updateTitle(page);
                 })
                 .catch(() => {
-                    document.getElementById("app").innerHTML = "<h2>Page Not Found</h2>";
+                    fetch(`pages/error/404.php`)
+                        .then(res => res.text())
+                        .then(html => {
+                            document.getElementById("app").innerHTML = html;
+                            updateTitle('404');
+                        });
                 });
         };
 
+        // تحديث عنوان الصفحة بناء على الصفحة الحالية
         function updateTitle(page) {
             if (page === "home") {
-                document.title = "home";
-            } else if (page === "about") {
-                document.title = "about";
+                document.title = "الصفحة الرئيسية";
+            } else if (page === "patriarchs") {
+                document.title = "الآباء الأساقفة";
+            } else if (page === "404") {
+                document.title = "صفحة غير موجودة - خطأ 404";
             } else {
-                document.title = "ah yaniii";
+                document.title = page;
             }
         }
 
-        // Initial page load based on URL when the page first loads
-        window.addEventListener("DOMContentLoaded", () => {
-            const path = window.location.pathname.replace('<?php echo $mainurl ?>/', '');
-            const page = path.split('/')[0] || 'home'; // Default to 'home' if no path is present
-
-            // Dynamically load the page based on the URL
-            fetch(`pages/${page}/${page}.php`)
-                .then(res => res.text())
-                .then(html => {
-                    document.getElementById("app").innerHTML = html;
-                })
-                .catch(() => {
-                    document.getElementById("app").innerHTML = "<h2>Page Not Found</h2>";
-                });
-            updateTitle(page); // Update the title based on the current page
-            updateNavbarActive(page); // Update navbar active page
-
-
-        });
-
+        // تحديث حالة العنصر النشط في شريط التنقل
         function updateNavbarActive(page) {
-            // Reset all navbar links
             const navbarLinks = document.querySelectorAll('.navbar-nav .nav-link');
             navbarLinks.forEach(link => link.classList.remove('active'));
 
-            // Add active class to the link corresponding to the current page
             const activeLink = document.querySelector(`.navbar-nav .nav-link[href*='${page}']`);
-            if (activeLink) {
-                activeLink.classList.add('active');
-            }
+            if (activeLink) activeLink.classList.add('active');
         }
+
+        // عند تحميل الصفحة لأول مرة، ضبط العنوان والـ Navbar
+        window.addEventListener("DOMContentLoaded", () => {
+            const path = window.location.pathname.replace('<?php echo $mainurl ?>/', '');
+            const page = path.split('/')[0] || 'home';
+            updateNavbarActive(page);
+            updateTitle(page);
+        });
     </script>
+
     <script>
         // استرجاع الثيم من session عند تحميل الصفحة
         window.addEventListener("DOMContentLoaded", () => {
@@ -120,7 +133,7 @@
             }
         });
 
-        // عند الضغط على الأيقونة
+        // عند الضغط على أيقونة تغيير الثيم
         document.getElementById("theme-toggle").addEventListener("click", () => {
             const html = document.documentElement;
             const icon = document.getElementById("theme-toggle");
@@ -140,24 +153,7 @@
         });
     </script>
 
+    <?php include "footer/footer.php"; ?>
+</body>
 
-
-    <?php
-
-
-    // }
-
-    // switch ($request) {
-    //     case '':
-    //     case '/':
-    //     case 'about':
-    //         include 'pages/about/about.php';
-    //         break;
-    //     default:
-    //         http_response_code(404);
-    //         include 'pages/error/404.php';
-    //         break;
-    // }
-    include "footer/footer.php";
-
-    ?>
+</html>
