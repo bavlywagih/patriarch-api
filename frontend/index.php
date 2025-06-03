@@ -4,7 +4,7 @@
 <head>
     <?php
     $request = $_SERVER['REQUEST_URI'];
-    $mainurl = "/patriarch/frontend";
+    $mainurl = "/patriarch-api/frontend";
     $request = str_replace($mainurl . '/', '', $request);
 
     // معالجة الدخول المباشر وعرض الصفحة المناسبة داخل #app
@@ -31,6 +31,8 @@
     <div id="app">
         <?php echo $pageContent; ?>
     </div>
+    <?php include "components/toast/toast.php"; ?>
+
 
     <script>
         // دالة التنقل الديناميكي عبر JavaScript داخل الموقع
@@ -152,6 +154,9 @@
             }
         });
     </script>
+
+
+
 
     <?php include "footer/footer.php"; ?>
 </body>

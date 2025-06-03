@@ -5,3 +5,4 @@
     <link rel="stylesheet" href="css/all.min.css">
     <link rel="stylesheet" href="components/navbar/navbar.css">
     <link rel="stylesheet" href="pages/home/home.css">
+    <link rel="stylesheet" href="pages/login/login.css">
